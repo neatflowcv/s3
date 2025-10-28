@@ -4,77 +4,27 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
-	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/neatflowcv/s3/internal/pkg/domain"
+	"github.com/neatflowcv/s3/internal/pkg/client"
 )
 
-type Service struct{}
+type Service struct {
+	client client.Client
+}
 
-func NewService() *Service {
-	return &Service{}
+func NewService(client client.Client) *Service {
+	return &Service{
+		client: client,
+	}
 }
 
 func (s *Service) ListObjects(
 	ctx context.Context,
-	endpoint string,
-	creds *domain.Credentials,
 	bucket string,
-	prefix string,
 ) ([]*Object, error) {
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithRegion("us-east-1"), // region은 ceph rgw 호환을 위해 기본값으로 us-east-1 사용
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			creds.AccessKey(), creds.SecretKey(), "",
-		)),
-	)
+	objects, err := s.client.ListObjects(ctx, bucket)
 	if err != nil {
-		return nil, fmt.Errorf("load default config: %w", err)
+		return nil, fmt.Errorf("list objects: %w", err)
 	}
 
-	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		// Path-style 강제 및 커스텀 엔드포인트 지정
-		o.UsePathStyle = true
-		o.BaseEndpoint = aws.String(endpoint)
-	})
-
-	pager := s3.NewListObjectsV2Paginator(client, &s3.ListObjectsV2Input{ //nolint:exhaustruct
-		Bucket: &bucket,
-		Prefix: &prefix,
-	})
-
-	var all []s3types.Object
-
-	for pager.HasMorePages() {
-		page, err := pager.NextPage(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("list objects: %w", err)
-		}
-
-		all = append(all, page.Contents...)
-	}
-
-	var ret []*Object
-
-	for _, obj := range all {
-		key := ""
-		if obj.Key != nil {
-			key = *obj.Key
-		}
-
-		size := int64(0)
-		if obj.Size != nil {
-			size = *obj.Size
-		}
-
-		ret = append(ret, &Object{
-			Key:  key,
-			Size: size,
-		})
-	}
-
-	return ret, nil
+	return fromObjects(objects), nil
 }

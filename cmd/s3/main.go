@@ -9,7 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/neatflowcv/s3/internal/app/flow"
-	"github.com/neatflowcv/s3/internal/pkg/domain"
+	"github.com/neatflowcv/s3/internal/pkg/client/aws"
 	"github.com/urfave/cli/v3"
 )
 
@@ -86,10 +86,14 @@ func main() {
 }
 
 func ls(ctx context.Context, endpoint, access, secret, bucket string) error {
-	service := flow.NewService()
-	creds := domain.NewCredentials(access, secret)
+	client, err := aws.NewClient(ctx, endpoint, access, secret)
+	if err != nil {
+		return fmt.Errorf("new client: %w", err)
+	}
 
-	objects, err := service.ListObjects(ctx, endpoint, creds, bucket, "")
+	service := flow.NewService(client)
+
+	objects, err := service.ListObjects(ctx, bucket)
 	if err != nil {
 		log.Fatalf("list objects 실패: %v", err)
 	}
