@@ -25,10 +25,7 @@ func version() string {
 func main() { //nolint:funlen
 	log.Println("version", version())
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("load .env file: %v", err)
-	}
+	loadEnv()
 
 	var (
 		endpoint string
@@ -109,9 +106,16 @@ func main() { //nolint:funlen
 		},
 	}
 
-	err = app.Run(context.Background(), os.Args)
+	err := app.Run(context.Background(), os.Args)
 	if err != nil {
 		log.Fatalf("run app: %v", err)
+	}
+}
+
+func loadEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Printf("load .env file: %v", err)
 	}
 }
 
