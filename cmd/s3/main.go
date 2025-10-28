@@ -8,8 +8,8 @@ import (
 	"runtime/debug"
 
 	"github.com/joho/godotenv"
+	"github.com/neatflowcv/s3/internal/app/flow"
 	"github.com/neatflowcv/s3/internal/pkg/domain"
-	apis3ls "github.com/neatflowcv/s3/pkg/s3ls"
 	"github.com/urfave/cli/v3"
 )
 
@@ -86,9 +86,10 @@ func main() {
 }
 
 func ls(ctx context.Context, endpoint, access, secret, bucket string) error {
+	service := flow.NewService()
 	creds := domain.NewCredentials(access, secret)
 
-	objects, err := apis3ls.ListAllObjects(ctx, endpoint, creds, bucket, "")
+	objects, err := service.ListObjects(ctx, endpoint, creds, bucket, "")
 	if err != nil {
 		log.Fatalf("list objects 실패: %v", err)
 	}
