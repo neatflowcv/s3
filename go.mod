@@ -7,6 +7,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.31.15
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.19
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.7
+	github.com/joho/godotenv v1.5.1
+	github.com/urfave/cli/v3 v3.5.0
 )
 
 require (

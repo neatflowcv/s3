@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"runtime/debug"
 
+	"github.com/joho/godotenv"
 	apis3ls "github.com/neatflowcv/s3/pkg/s3ls"
+	"github.com/urfave/cli/v3"
 )
 
 func version() string {
@@ -23,30 +24,70 @@ func version() string {
 func main() {
 	log.Println("version", version())
 
-	endpoint := flag.String("endpoint", "http://192.168.56.176:80", "Ceph RGW endpoint (http/https)")
-	bucket := flag.String("bucket", "", "S3 bucket name")
-	prefix := flag.String("prefix", "", "Object key prefix filter")
-	accessKey := flag.String("access-key", os.Getenv("AWS_ACCESS_KEY_ID"), "Access key (default from AWS_ACCESS_KEY_ID)")
-	secretKey := flag.String(
-		"secret-key",
-		os.Getenv("AWS_SECRET_ACCESS_KEY"),
-		"Secret key (default from AWS_SECRET_ACCESS_KEY)",
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("load .env file: %v", err)
+	}
+
+	var (
+		endpoint string
+		access   string
+		secret   string
+		bucket   string
 	)
-	flag.Parse()
 
-	if *bucket == "" {
-		log.Fatalf("-bucket 은 필수입니다")
+	app := &cli.Command{ //nolint:exhaustruct
+		Name: "s3",
+		Flags: []cli.Flag{
+			&cli.StringFlag{ //nolint:exhaustruct
+				Name:        "endpoint",
+				Value:       "",
+				Usage:       "Ceph RGW endpoint (http/https)",
+				Sources:     cli.EnvVars("ENDPOINT"),
+				Destination: &endpoint,
+			},
+			&cli.StringFlag{ //nolint:exhaustruct
+				Name:        "access",
+				Value:       "",
+				Usage:       "Access key",
+				Sources:     cli.EnvVars("ACCESS"),
+				Destination: &access,
+			},
+			&cli.StringFlag{ //nolint:exhaustruct
+				Name:        "secret",
+				Value:       "",
+				Usage:       "Secret key",
+				Sources:     cli.EnvVars("SECRET"),
+				Destination: &secret,
+			},
+		},
+		Commands: []*cli.Command{
+			{
+				Name: "ls",
+				Arguments: []cli.Argument{
+					&cli.StringArg{ //nolint:exhaustruct
+						Name:        "bucket",
+						UsageText:   "S3 bucket name",
+						Destination: &bucket,
+					},
+				},
+				Action: func(ctx context.Context, c *cli.Command) error {
+					return ls(ctx, endpoint, access, secret, bucket)
+				},
+			},
+		},
 	}
 
-	if *accessKey == "" || *secretKey == "" {
-		log.Fatalf("access key/secret key 가 필요합니다 (플래그 또는 환경변수 설정)")
+	err = app.Run(context.Background(), os.Args)
+	if err != nil {
+		log.Fatalf("run app: %v", err)
 	}
+}
 
-	creds := apis3ls.Credentials{AccessKey: *accessKey, SecretKey: *secretKey}
+func ls(ctx context.Context, endpoint, access, secret, bucket string) error {
+	creds := apis3ls.Credentials{AccessKey: access, SecretKey: secret}
 
-	ctx := context.Background()
-
-	objects, err := apis3ls.ListAllObjects(ctx, *endpoint, creds, *bucket, *prefix)
+	objects, err := apis3ls.ListAllObjects(ctx, endpoint, creds, bucket, "")
 	if err != nil {
 		log.Fatalf("list objects 실패: %v", err)
 	}
@@ -61,4 +102,6 @@ func main() {
 		// 단순 출력: Size Key
 		fmt.Printf("%s\t%s\n", size, key) //nolint:forbidigo
 	}
+
+	return nil
 }
