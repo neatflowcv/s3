@@ -22,7 +22,7 @@ func version() string {
 	return info.Main.Version
 }
 
-func main() {
+func main() { //nolint:funlen
 	log.Println("version", version())
 
 	err := godotenv.Load()
@@ -35,6 +35,7 @@ func main() {
 		access   string
 		secret   string
 		bucket   string
+		key      string
 	)
 
 	app := &cli.Command{ //nolint:exhaustruct
@@ -75,6 +76,23 @@ func main() {
 				Action: func(ctx context.Context, c *cli.Command) error {
 					return ls(ctx, endpoint, access, secret, bucket)
 				},
+			}, {
+				Name: "head",
+				Arguments: []cli.Argument{
+					&cli.StringArg{ //nolint:exhaustruct
+						Name:        "bucket",
+						UsageText:   "S3 bucket name",
+						Destination: &bucket,
+					},
+					&cli.StringArg{ //nolint:exhaustruct
+						Name:        "key",
+						UsageText:   "S3 object key",
+						Destination: &key,
+					},
+				},
+				Action: func(ctx context.Context, c *cli.Command) error {
+					return head(ctx, endpoint, access, secret, bucket, key)
+				},
 			},
 		},
 	}
@@ -101,6 +119,24 @@ func ls(ctx context.Context, endpoint, access, secret, bucket string) error {
 	for _, obj := range objects {
 		fmt.Printf("%v\t%v\n", obj.Key, obj.Size) //nolint:forbidigo
 	}
+
+	return nil
+}
+
+func head(ctx context.Context, endpoint, access, secret, bucket, key string) error {
+	client, err := aws.NewClient(ctx, endpoint, access, secret)
+	if err != nil {
+		return fmt.Errorf("new client: %w", err)
+	}
+
+	service := flow.NewService(client)
+
+	object, err := service.HeadObject(ctx, bucket, key)
+	if err != nil {
+		return fmt.Errorf("head object: %w", err)
+	}
+
+	fmt.Printf("%v\t%v\n", object.Key, object.ContentType) //nolint:forbidigo
 
 	return nil
 }

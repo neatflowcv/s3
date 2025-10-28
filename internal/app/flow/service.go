@@ -28,3 +28,12 @@ func (s *Service) ListObjects(
 
 	return fromObjects(objects), nil
 }
+
+func (s *Service) HeadObject(ctx context.Context, bucket, key string) (*Head, error) {
+	head, err := s.client.HeadObject(ctx, bucket, key)
+	if err != nil {
+		return nil, fmt.Errorf("head object: %w", err)
+	}
+
+	return fromHead(head), nil
+}

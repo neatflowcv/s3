@@ -80,3 +80,20 @@ func (c *Client) ListObjects(ctx context.Context, bucket string) ([]*domain.Obje
 
 	return ret, nil
 }
+
+func (c *Client) HeadObject(ctx context.Context, bucket, key string) (*domain.Head, error) {
+	res, err := c.client.HeadObject(ctx, &s3.HeadObjectInput{ //nolint:exhaustruct
+		Bucket: &bucket,
+		Key:    &key,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("head object: %w", err)
+	}
+
+	contentType := ""
+	if res.ContentType != nil {
+		contentType = *res.ContentType
+	}
+
+	return domain.NewHead(key, contentType), nil
+}
