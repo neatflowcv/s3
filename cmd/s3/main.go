@@ -93,6 +93,18 @@ func main() { //nolint:funlen
 				Action: func(ctx context.Context, c *cli.Command) error {
 					return head(ctx, endpoint, access, secret, bucket, key)
 				},
+			}, {
+				Name: "list-heads",
+				Arguments: []cli.Argument{
+					&cli.StringArg{ //nolint:exhaustruct
+						Name:        "bucket",
+						UsageText:   "S3 bucket name",
+						Destination: &bucket,
+					},
+				},
+				Action: func(ctx context.Context, c *cli.Command) error {
+					return listHeads(ctx, endpoint, access, secret, bucket)
+				},
 			},
 		},
 	}
@@ -137,6 +149,26 @@ func head(ctx context.Context, endpoint, access, secret, bucket, key string) err
 	}
 
 	fmt.Printf("%v\t%v\n", object.Key, object.ContentType) //nolint:forbidigo
+
+	return nil
+}
+
+func listHeads(ctx context.Context, endpoint, access, secret, bucket string) error {
+	client, err := aws.NewClient(ctx, endpoint, access, secret)
+	if err != nil {
+		return fmt.Errorf("new client: %w", err)
+	}
+
+	service := flow.NewService(client)
+
+	heads, err := service.ListHeads(ctx, bucket)
+	if err != nil {
+		return fmt.Errorf("list heads: %w", err)
+	}
+
+	for _, head := range heads {
+		fmt.Printf("%v\t%v\n", head.Key, head.ContentType) //nolint:forbidigo
+	}
 
 	return nil
 }

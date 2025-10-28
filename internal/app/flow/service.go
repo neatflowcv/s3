@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/neatflowcv/s3/internal/pkg/client"
+	"github.com/neatflowcv/s3/internal/pkg/domain"
 )
 
 type Service struct {
@@ -36,4 +37,24 @@ func (s *Service) HeadObject(ctx context.Context, bucket, key string) (*Head, er
 	}
 
 	return fromHead(head), nil
+}
+
+func (s *Service) ListHeads(ctx context.Context, bucket string) ([]*Head, error) {
+	objects, err := s.client.ListObjects(ctx, bucket)
+	if err != nil {
+		return nil, fmt.Errorf("list objects: %w", err)
+	}
+
+	var heads []*domain.Head
+
+	for _, obj := range objects {
+		head, err := s.client.HeadObject(ctx, bucket, obj.Key())
+		if err != nil {
+			return nil, fmt.Errorf("head object: %w", err)
+		}
+
+		heads = append(heads, head)
+	}
+
+	return fromHeads(heads), nil
 }

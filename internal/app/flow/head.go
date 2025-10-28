@@ -13,3 +13,12 @@ func fromHead(head *domain.Head) *Head {
 		ContentType: head.ContentType(),
 	}
 }
+
+func fromHeads(heads []*domain.Head) []*Head {
+	var ret []*Head
+	for _, head := range heads {
+		ret = append(ret, fromHead(head))
+	}
+
+	return ret
+}
