@@ -24,7 +24,7 @@ func (s *Service) ListObjects(
 	creds *domain.Credentials,
 	bucket string,
 	prefix string,
-) ([]s3types.Object, error) {
+) ([]*Object, error) {
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"), // region은 ceph rgw 호환을 위해 기본값으로 us-east-1 사용
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
@@ -57,5 +57,24 @@ func (s *Service) ListObjects(
 		all = append(all, page.Contents...)
 	}
 
-	return all, nil
+	var ret []*Object
+
+	for _, obj := range all {
+		key := ""
+		if obj.Key != nil {
+			key = *obj.Key
+		}
+
+		size := int64(0)
+		if obj.Size != nil {
+			size = *obj.Size
+		}
+
+		ret = append(ret, &Object{
+			Key:  key,
+			Size: size,
+		})
+	}
+
+	return ret, nil
 }

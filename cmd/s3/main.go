@@ -95,14 +95,7 @@ func ls(ctx context.Context, endpoint, access, secret, bucket string) error {
 	}
 
 	for _, obj := range objects {
-		size := fmt.Sprintf("%d", obj.Size)
-
-		key := ""
-		if obj.Key != nil {
-			key = *obj.Key
-		}
-		// 단순 출력: Size Key
-		fmt.Printf("%s\t%s\n", size, key) //nolint:forbidigo
+		fmt.Printf("%v\t%v\n", obj.Key, obj.Size) //nolint:forbidigo
 	}
 
 	return nil

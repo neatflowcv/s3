@@ -6,3 +6,4 @@ linters:
     - depguard
     - tagliatelle
     - wsl # deprecated
+    - prealloc # var ret []*Object 같은 애들이 좋아서 비활성화
