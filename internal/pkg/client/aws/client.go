@@ -2,6 +2,7 @@ package aws
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -51,6 +52,11 @@ func (c *Client) ListObjects(ctx context.Context, bucket string) ([]*domain.Obje
 	for pager.HasMorePages() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {
+			var noSuchBucket *s3types.NoSuchBucket
+			if errors.As(err, &noSuchBucket) {
+				return nil, client.ErrBucketNotFound
+			}
+
 			return nil, fmt.Errorf("list objects: %w", err)
 		}
 
@@ -87,6 +93,11 @@ func (c *Client) HeadObject(ctx context.Context, bucket, key string) (*domain.He
 		Key:    &key,
 	})
 	if err != nil {
+		var notFound *s3types.NotFound
+		if errors.As(err, &notFound) {
+			return nil, client.ErrObjectNotFound
+		}
+
 		return nil, fmt.Errorf("head object: %w", err)
 	}
 
