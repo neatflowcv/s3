@@ -6,6 +6,10 @@ type Object struct {
 }
 
 func NewObject(key string, size uint64) *Object {
+	if key == "" {
+		panic("key is empty")
+	}
+
 	return &Object{
 		key:  key,
 		size: size,

@@ -6,6 +6,14 @@ type Head struct {
 }
 
 func NewHead(key, contentType string) *Head {
+	if key == "" {
+		panic("key is empty")
+	}
+
+	if contentType == "" {
+		panic("contentType is empty")
+	}
+
 	return &Head{
 		key:         key,
 		contentType: contentType,
