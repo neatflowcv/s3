@@ -9,19 +9,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/neatflowcv/s3/internal/pkg/domain"
 )
-
-// Credentials 는 정적 자격 증명을 담는다.
-type Credentials struct {
-	AccessKey string
-	SecretKey string
-}
 
 // ListAllObjects 는 주어진 endpoint(Path-style 강제)와 크레덴셜로 특정 버킷/프리픽스의 모든 객체를 나열한다.
 func ListAllObjects(
 	ctx context.Context,
 	endpoint string,
-	creds Credentials,
+	creds *domain.Credentials,
 	bucket string,
 	prefix string,
 ) ([]s3types.Object, error) {
@@ -29,7 +24,7 @@ func ListAllObjects(
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion("us-east-1"),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			creds.AccessKey, creds.SecretKey, "",
+			creds.AccessKey(), creds.SecretKey(), "",
 		)),
 	)
 	if err != nil {
